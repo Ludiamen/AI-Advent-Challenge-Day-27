@@ -112,8 +112,11 @@ def запасное_уточнение(ближайшие: list) -> str:
     return f"какой документ вы имеете в виду — например: {варианты}?"
 
 
-def уточнить(клиент, модель: str, вопрос: str, ближайшие: list) -> tuple[str, Any]:
-    """Уточняющий вопрос от модели: (текст, reply или None при сбое)."""
+def уточнить(клиент, модель: str, вопрос: str, ближайшие: list,
+             температура: float | None = None) -> tuple[str, Any]:
+    """Уточняющий вопрос от модели: (текст, reply или None при сбое).
+
+    температура — роли ответа из карты (только у локальной модели)."""
     from agent.llm import LLMError
     разделы = "\n".join(
         f"{i}) {раздел_строкой(н)}" + (f" (релевантность {н.реранк:.2f})" if н.реранк is not None else "")
@@ -121,7 +124,8 @@ def уточнить(клиент, модель: str, вопрос: str, бли�
     сообщения = [{"role": "system", "content": УТОЧНЕНИЕ},
                  {"role": "user", "content": f"Вопрос: {вопрос}\n\nБлижайшие разделы:\n{разделы}"}]
     try:
-        reply = клиент.call(модель, сообщения, max_tokens=300, low_effort=True)
+        reply = клиент.call(модель, сообщения, max_tokens=300, low_effort=True,
+                            **({"temperature": температура} if температура is not None else {}))
     except LLMError:
         return запасное_уточнение(ближайшие), None
     найдено = re.search(r"\{.*\}", reply.text or "", re.S)
