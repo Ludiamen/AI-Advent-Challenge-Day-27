@@ -406,8 +406,11 @@ class LLMРеранкер(Реранкер):
         сообщения = [{"role": "system", "content": LLM_ПРОМПТ},
                      {"role": "user", "content": "Фрагменты:\n\n" + "\n\n".join(куски)
                       + f"\n\nВопрос: {вопрос}"}]
+        from agent.local import schemas
         try:
-            ответ = self.клиент.call(модель, сообщения, max_tokens=600, low_effort=True)
+            # Локальной модели — температура роли из карты (27.2).
+            ответ = self.клиент.call(модель, сообщения, max_tokens=600, low_effort=True,
+                                     **schemas.температура_вызова(РОЛЬ_LLM, модель))
         except LLMError as exc:
             raise ОшибкаРеранкера(f"LLM-реранкер не ответил: {exc}") from exc
         self.токенов += ответ.prompt_tokens + ответ.completion_tokens

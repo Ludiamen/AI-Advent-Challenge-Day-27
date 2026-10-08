@@ -229,9 +229,12 @@ def судить(клиент, сценарий: dict[str, Any], ходы: list[
                                              f"{память.текст(с_выясненным=False)}\n\n"
                                              "Разговор:\n" + "\n\n".join(строки)}]
     пояснение = ""
+    from agent.local import schemas
     for модель in qa.модели_судьи():
         try:
-            reply = клиент.call(модель, сообщения, max_tokens=700, low_effort=True)
+            # Локальной модели — температура роли судьи из карты (27.2).
+            reply = клиент.call(модель, сообщения, max_tokens=700, low_effort=True,
+                                **schemas.температура_вызова(qa.РОЛЬ_СУДЬИ, модель))
         except LLMError as exc:
             пояснение = f"судья недоступен ({модель}): {exc}"[:200]
             continue

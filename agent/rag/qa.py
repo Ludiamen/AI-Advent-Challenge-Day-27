@@ -204,10 +204,14 @@ def _спросить_судью(клиент, модели: list[str], сооб
     квота или пустой ответ — сразу к запасной, прочий сбой — ещё одна попытка.
     """
     from agent.llm import LLMError
+    from agent.local import schemas
     for модель in модели:
         for попытка in range(2):
             try:
-                reply = клиент.call(модель, сообщения, max_tokens=400, low_effort=True)
+                # Температура — для каждой модели своя: в списке судей бывают и
+                # облачные, и локальные; локальной — из карты ролей (27.2).
+                reply = клиент.call(модель, сообщения, max_tokens=400, low_effort=True,
+                                    **schemas.температура_вызова(РОЛЬ_СУДЬИ, модель))
             except LLMError as exc:
                 оценка.пояснение = f"судья недоступен ({модель}): {exc}"[:200]
                 if попытка == 0 and not re.search(r"квот|пуст", str(exc)):

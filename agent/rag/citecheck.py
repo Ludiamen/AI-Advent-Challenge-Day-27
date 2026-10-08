@@ -167,9 +167,12 @@ def судить(клиент, п: Проверка) -> None:
     сообщения = [{"role": "system", "content": СУДЬЯ_ЦИТАТ},
                  {"role": "user", "content": f"Вопрос: {п.ответ.вопрос}\n\nОтвет помощника:\n"
                                              f"{п.ответ.текст}\n\nЦитаты:\n{цитаты}"}]
+    from agent.local import schemas
     for модель in qa.модели_судьи():
         try:
-            reply = клиент.call(модель, сообщения, max_tokens=400, low_effort=True)
+            # Локальной модели — температура роли судьи из карты (27.2).
+            reply = клиент.call(модель, сообщения, max_tokens=400, low_effort=True,
+                                **schemas.температура_вызова(qa.РОЛЬ_СУДЬИ, модель))
         except LLMError as exc:
             п.пояснение = f"судья недоступен ({модель}): {exc}"[:200]
             continue

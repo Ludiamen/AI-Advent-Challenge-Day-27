@@ -474,9 +474,14 @@ class MemoryManager:
                 ),
             },
         ]
+        from agent.local import schemas
+        модель_свёртки = model_key or self.summarizer_model
+        # Локальной модели — температура роли «сжатие» из карты (0), облачной —
+        # прежние 0,2 (27.2).
+        т = schemas.температура("сжатие", модель_свёртки)
         try:
-            ответ = self.client.call(model_key or self.summarizer_model, сообщения,
-                                     max_tokens=700, temperature=0.2, low_effort=True)
+            ответ = self.client.call(модель_свёртки, сообщения, max_tokens=700,
+                                     temperature=0.2 if т is None else т, low_effort=True)
         except LLMError as exc:
             log.warning("Свёртка задачи без модели (%s)", exc)
             return запасной

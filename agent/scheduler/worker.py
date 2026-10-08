@@ -242,9 +242,12 @@ class Работник:
         клиент = self._модель()
         if клиент is None:
             return ""
+        from agent.local import schemas
         try:
+            # Локальной модели — температура роли «сжатие» из карты (27.2).
             ответ = клиент.call(self.модель, [{"role": "user",
-                                               "content": digest.промпт(сводка.цифры)}])
+                                               "content": digest.промпт(сводка.цифры)}],
+                                **schemas.температура_вызова("сжатие", self.модель))
             текст = (ответ.text or "").strip()
         except Exception as exc:  # noqa: BLE001 — провайдер лежит, сводка остаётся
             log.warning("Сводку №%s озвучить не удалось: %s", номер, exc)
